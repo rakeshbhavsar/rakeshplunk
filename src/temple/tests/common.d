@@ -103,38 +103,6 @@ unittest
 
 unittest
 {
-	// Test shorthand
-	const templ = `
-		% if(true) {
-			Hello!
-		% }
-	`;
-	auto render = compile_temple!(templ);
-	assert(isSameRender(render.toString, "Hello!"));
-}
-
-unittest
-{
-	// Test shorthand string eval
-	const templ = `
-		% if(true) {
-			%= "foo"
-		% }
-	`;
-	auto render = compile_temple!(templ);
-	//static assert(false);
-	assert(isSameRender(render.toString, "foo"));
-}
-unittest
-{
-	// Test shorthand only after newline
-	const templ = `foo%bar`;
-	auto render = compile_temple!(templ);
-	assert(render.toString == "foo%bar");
-}
-
-unittest
-{
 	// Ditto
 	auto render = compile_temple!`<%= "foo%bar" %>`;
 	assert(render.toString == "foo%bar");
@@ -260,19 +228,41 @@ unittest
 {
 	import temple.func_string_gen;
 	// Test returning early from templates
-	//auto str = `
 	auto render = compile_temple!`
 		one
-		% auto blah = true;
-		% if(blah) {
+		<% auto blah = true; %>
+		<% if(blah) { %>
 			two
-			%	return;
-		% }
+			<% return; %>
+		<% } %>
 		three
 	`;
 
-	//writeln(__temple_gen_temple_func_string(str, "Inline"));
 	assert(isSameRender(render.toString,
 		`one
 		two`));
+}
+
+unittest
+{
+	// should cause travis to time out if temple func generator isn't
+	// sufficiently lean
+	auto render = compile_temple_file!"test15_largefile.emd";
+}
+
+unittest
+{
+	//Test emitting a literal <%= or <%
+	const templ = q{
+		print lit eval: <%= "<%=" %>
+		print lit stmt: <%= "<%" %>
+		print lit clos: %>
+	};
+
+	auto render = compile_temple!templ;
+	assert(render.toString == q{
+		print lit eval: <%=
+		print lit stmt: <%
+		print lit clos: %>
+	});
 }
